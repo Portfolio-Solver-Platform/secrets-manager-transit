@@ -1,0 +1,18 @@
+services:
+  secrets-manager-transit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: secrets-manager-transit
+    container_name: secrets-manager-transit
+    restart: unless-stopped
+
+    ports:
+      - "8200:8200"
+
+    volumes:
+      - secrets-manager-transit-data:/openbao/data
+
+volumes:
+  secrets-manager-transit-data:
+    name: secrets-manager-transit-data
