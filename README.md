@@ -21,7 +21,7 @@ Remember to clear the command history afterwards using `rm $HISTFILE`.
 
 Run `terraform init`.
 Then, set the `VAULT_TOKEN` environment variable to the root token and apply the manager's configuration by running `VAULT_TOKEN=<root-token> terraform apply`.
+Optionally, the `token_period` variable can be set to control how long the token lasts: `-var token_period=30d`
 
 Get the boostrap token by running: `terraform output -raw kubernetes_bootstrap_token`.
-Optionally, the `token_period` variable can be set to control how long the token lasts: `-var token_period=30d`
 
