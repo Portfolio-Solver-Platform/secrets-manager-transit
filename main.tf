@@ -7,6 +7,11 @@ terraform {
   }
 }
 
+variable "token_period" {
+  type        = string
+  default     = "24h"
+}
+
 provider "vault" {
   address = "http://127.0.0.1:8200"
   # We will pass the token via environment variable for security
@@ -41,7 +46,7 @@ EOT
 resource "vault_token" "k8s_bootstrap" {
   policies          = [vault_policy.k8s_autounseal.name]
   no_parent         = true
-  period            = "24h"
+  period            = var.token_period
   renewable         = true
 }
 
