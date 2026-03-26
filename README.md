@@ -11,12 +11,15 @@ This memory contains the secret to unseal the main secrets manager.
 
 Run the image: `docker compose up -d --build`
 
-For a first time run, it must be initialised by running `dao operator init` within the container.
+For a first time run, it must be initialised by running `bao operator init` within the container.
 Then, all the keys must be stored somewhere securely.
 
-The manager must be unseal by running `dao operator unseal <unseal-key>` three times with three different unseal keys.
+The manager must be unsealed by running `bao operator unseal <unseal-key>` three times with three different unseal keys.
+Remember to clear the command history afterwards using `history -c`.
 
 Run `terraform init`.
 Then, set the `VAULT_TOKEN` environment variable to the root token, i.e., `export VAULT_TOKEN=<root-token>`.
 Apply the manager's configuration by running `terraform apply`.
+
+Get the boostrap token by running: `terraform output -raw kubernetes_bootstrap_token`
 
