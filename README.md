@@ -4,6 +4,11 @@ This is a minimal secrets manager only used to auto-unseal the main secrets mana
 
 ## Usage
 
+Prerequisites:
+- Have [Nix (the package manager)](https://nixos.org/download/) installed
+- Enter the Nix environment: `nix --extra-experimental-features "nix-command flakes" develop`
+    - If you have Nix flakes enabled globally, you can instead run `nix develop`
+
 For initialisation, run the `./scripts/init` bash script from the root of this repo.
 For local development, run it with `--no-swap` to stop it from disabling swap memory.
 
