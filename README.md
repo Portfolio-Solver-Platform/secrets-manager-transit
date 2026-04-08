@@ -37,6 +37,8 @@ Get the boostrap token by running: `tofu output -raw kubernetes_bootstrap_token`
 
 ## Deletion
 
-To delete this secrets manager, you can find the ID of the container using `docker ps`.
+To delete this secrets manager, run the `./scripts/delete` bash script.
+
+Or manually, you can find the ID of the container using `docker ps`.
 Then, use `docker stop <id> && docker kill <id>`. Finally, use `docker volume rm secrets-manager-transit-data`.
 
