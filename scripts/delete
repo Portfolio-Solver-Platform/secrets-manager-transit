@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+CONTAINER_NAME="secrets-manager-transit"
+VOLUME_NAME="secrets-manager-transit-data"
+
+echo "=================================================="
+echo "      TEARDOWN: TRANSIT SECRETS MANAGER"
+echo "=================================================="
+
+# Find the container ID based on the exact container name
+echo "Looking for container '$CONTAINER_NAME'..."
+CONTAINER_ID=$(docker ps -a -q -f name=^/${CONTAINER_NAME}$)
+
+if [ -n "$CONTAINER_ID" ]; then
+    echo "Found container ID: $CONTAINER_ID"
+    
+    echo "Stopping container..."
+    docker stop "$CONTAINER_ID" > /dev/null
+    
+    echo "Killing and removing container..."
+    # 'docker rm -f' forcefully kills and removes the container in one step
+    docker rm -f "$CONTAINER_ID" > /dev/null
+    
+    echo "Container deleted successfully."
+else
+    echo "Container '$CONTAINER_NAME' not found. Skipping container deletion."
+fi
+
+echo "--------------------------------------------------"
+
+# Check if the volume exists before trying to remove it
+echo "Looking for volume '$VOLUME_NAME'..."
+if docker volume ls -q -f name=^${VOLUME_NAME}$ | grep -q .; then
+    echo "Removing volume..."
+    docker volume rm "$VOLUME_NAME" > /dev/null
+    echo "Volume deleted successfully."
+else
+    echo "Volume '$VOLUME_NAME' not found. Skipping volume deletion."
+fi
+
+echo "=================================================="
+echo "Deletion process complete."
+echo "=================================================="

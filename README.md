@@ -4,6 +4,16 @@ This is a minimal secrets manager only used to auto-unseal the main secrets mana
 
 ## Usage
 
+Prerequisites:
+- Have [Nix (the package manager)](https://nixos.org/download/) installed
+- Enter the Nix environment: `nix --extra-experimental-features "nix-command flakes" develop`
+    - If you have Nix flakes enabled globally, you can instead run `nix develop`
+
+For initialisation, run the `./scripts/init` bash script from the root of this repo.
+For local development, run it with `--no-swap` to stop it from disabling swap memory.
+
+### Initialisation Explanation
+
 On the machine that should run it securely, disable swap memory: `sudo swapoff -a`.
 Swap needs to be disabled because if swap is enabled and the machine runs out of RAM,
 then it may write the secrets manager's memory to the swap disk as plaintext.
@@ -19,9 +29,14 @@ Then, all the keys must be stored somewhere securely.
 The manager must be unsealed by running `bao operator unseal <unseal-key>` three times with three different unseal keys.
 Remember to clear the command history afterwards using `rm $HISTFILE`.
 
-Run `terraform init`.
-Then, set the `VAULT_TOKEN` environment variable to the root token and apply the manager's configuration by running `VAULT_TOKEN=<root-token> terraform apply`.
+Run `tofu init`.
+Then, set the `VAULT_TOKEN` environment variable to the root token and apply the manager's configuration by running `VAULT_TOKEN=<root-token> tofu apply`.
 Optionally, the `token_period` variable can be set to control how long the token lasts: `-var token_period=30d`
 
-Get the boostrap token by running: `terraform output -raw kubernetes_bootstrap_token`.
+Get the boostrap token by running: `tofu output -raw kubernetes_bootstrap_token`.
+
+## Deletion
+
+To delete this secrets manager, you can find the ID of the container using `docker ps`.
+Then, use `docker stop <id> && docker kill <id>`. Finally, use `docker volume rm secrets-manager-transit-data`.
 
