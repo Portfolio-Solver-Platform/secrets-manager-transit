@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+TOKEN_PERIOD="7d"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -t|--token-period) 
+            TOKEN_PERIOD="$2"
+            shift 2 
+            ;;
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo "Options:"
+            echo "  -t, --token-period <val>  Set the token period for Terraform (default: 7d)"
+            exit 0
+            ;;
+        *) 
+            echo "Unknown parameter passed: $1"
+            echo "Use --help for usage instructions."
+            exit 1 
+            ;;
+    esac
+done
+
+echo "Initializing OpenBao..."
+INIT_OUTPUT=$(docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator init")
+
+KEY1=$(echo "$INIT_OUTPUT" | grep "Unseal Key 1:" | awk '{print $NF}')
+KEY2=$(echo "$INIT_OUTPUT" | grep "Unseal Key 2:" | awk '{print $NF}')
+KEY3=$(echo "$INIT_OUTPUT" | grep "Unseal Key 3:" | awk '{print $NF}')
+KEY4=$(echo "$INIT_OUTPUT" | grep "Unseal Key 4:" | awk '{print $NF}')
+KEY5=$(echo "$INIT_OUTPUT" | grep "Unseal Key 5:" | awk '{print $NF}')
+ROOT_TOKEN=$(echo "$INIT_OUTPUT" | grep "Initial Root Token:" | awk '{print $NF}')
+
+echo "Unsealing OpenBao..."
+docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator unseal $KEY1" > /dev/null
+docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator unseal $KEY2" > /dev/null
+docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator unseal $KEY3" > /dev/null
+
+echo "Clearing container history..."
+docker exec secrets-manager-transit sh -c "rm -f \$HISTFILE"
+
+echo "Initializing Terraform..."
+tofu init
+
+echo "Applying Terraform configuration (Token Period: ${TOKEN_PERIOD})..."
+VAULT_TOKEN="$ROOT_TOKEN" tofu apply -var token_period="${TOKEN_PERIOD}" -auto-approve
+
+echo "Fetching Kubernetes bootstrap token..."
+K8S_TOKEN=$(tofu output -raw kubernetes_bootstrap_token)
+
+echo ""
+echo "=================================================="
+echo "          TRANSIT SECRETS MANAGER SETUP"
+echo "=================================================="
+echo ""
+echo "Unseal key 1: $KEY1"
+echo "Unseal key 2: $KEY2"
+echo "Unseal key 3: $KEY3"
+echo "Unseal key 4: $KEY4"
+echo "Unseal key 5: $KEY5"
+echo "Kubernetes Bootstrap Token: $K8S_TOKEN"
+echo ""
+echo "=================================================="
