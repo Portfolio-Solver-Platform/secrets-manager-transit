@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DISABLE_SWAP=true
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --no-swap) 
+            DISABLE_SWAP=false
+            shift 
+            ;;
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo "Options:"
+            echo "  --no-swap                 Do not disable swap memory"
+            exit 0
+            ;;
+        *) 
+            echo "Unknown parameter passed: $1"
+            echo "Use --help for usage instructions."
+            exit 1 
+            ;;
+    esac
+done
+
+if [ "$DISABLE_SWAP" = true ]; then
+    echo "Disabling swap memory..."
+    sudo swapoff -a
+else
+    echo "Skipping swap memory disable..."
+fi
+
+echo "Starting Transit Secrets Manager container..."
+docker compose up -d --build
+
+echo "Waiting 5 seconds for OpenBao to initialize..."
+sleep 5
+
+echo "Done."
