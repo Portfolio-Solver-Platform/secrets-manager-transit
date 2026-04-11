@@ -1,0 +1,63 @@
+name: Push Docker image
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      REGISTRY: ghcr.io/portfolio-solver-platform
+      IMAGE_NAME: secrets-manager-transit
+      MAIN_BRANCH_NAME: main
+
+    steps:
+      - name: Generate build ID
+        id: prep
+        run: |
+          branch=${GITHUB_REF_NAME//\//-}
+          sha=${GITHUB_SHA::8}
+          ts=$(date +'%Y%m%d%H%M%S')
+          echo "BUILD_TAG=${branch}-${sha}-${ts}" >> $GITHUB_ENV
+
+      - name: Generate Tags
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_TAG }}"
+          TAGS="$IMAGE"
+
+          if [ "$GITHUB_REF_NAME" == "${{ env.MAIN_BRANCH_NAME }}" ]; then
+            TAGS="$TAGS,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            echo "Building from main branch. 'latest' tag will be applied."
+          fi
+
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          echo "DOCKER_TAGS=$TAGS" >> $GITHUB_ENV
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
+        with:
+          context: .
+          pull: true
+          push: true
+          tags: ${{ env.DOCKER_TAGS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+

@@ -4,6 +4,13 @@ set -euo pipefail
 
 TOKEN_PERIOD="7d"
 
+if [[ -z "$BAO_ADDR" ]]; then
+    echo "Please set the BAO_ADDR environment variable before using this script"
+    echo "If OpenBao is accessible locally on port 8200 using HTTP, use the following command:"
+    echo "export BAO_ADDR=http://127.0.0.1:8200/"
+    exit 1
+fi
+
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -t|--token-period) 
@@ -25,7 +32,8 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 echo "Initializing OpenBao..."
-INIT_OUTPUT=$(docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator init")
+
+INIT_OUTPUT=$(bao operator init)
 
 KEY1=$(echo "$INIT_OUTPUT" | grep "Unseal Key 1:" | awk '{print $NF}')
 KEY2=$(echo "$INIT_OUTPUT" | grep "Unseal Key 2:" | awk '{print $NF}')
@@ -35,12 +43,9 @@ KEY5=$(echo "$INIT_OUTPUT" | grep "Unseal Key 5:" | awk '{print $NF}')
 ROOT_TOKEN=$(echo "$INIT_OUTPUT" | grep "Initial Root Token:" | awk '{print $NF}')
 
 echo "Unsealing OpenBao..."
-docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator unseal $KEY1" > /dev/null
-docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator unseal $KEY2" > /dev/null
-docker exec secrets-manager-transit sh -c "export BAO_ADDR=http://127.0.0.1:8200/ && bao operator unseal $KEY3" > /dev/null
-
-echo "Clearing container history..."
-docker exec secrets-manager-transit sh -c "rm -f \$HISTFILE"
+bao operator unseal "$KEY1" > /dev/null
+bao operator unseal "$KEY2" > /dev/null
+bao operator unseal "$KEY3" > /dev/null
 
 echo "Initializing Terraform..."
 tofu init

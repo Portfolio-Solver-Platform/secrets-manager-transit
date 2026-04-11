@@ -24,6 +24,7 @@
             packages = with pkgs; [
               bash
               opentofu
+              openbao
             ];
           };
         };
