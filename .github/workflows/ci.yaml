@@ -34,7 +34,7 @@ jobs:
           docker run -d -p 8200:8200 --name secrets-manager ${{ env.IMAGE }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@1d87d45818068401a10cf16bdc5f00b24994a83f # main
 
       - name: Run init-manager script
         run: export BAO_ADDR=http://127.0.0.1:8200/ && nix develop --command ./scripts/init-manager
